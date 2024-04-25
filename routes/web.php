@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,8 @@ Route::middleware('auth')->group(function () {
 
 Route::post('/profile', [UserProfileController::class, 'store'])->name('profile.store');
 
-
+Route::get('/chat', function () {
+    return view('chat');
+})->name('chat');
 
 require __DIR__.'/auth.php';

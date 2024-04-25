@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Dietary extends Model
 {
     use HasFactory;
+
+    protected $table = 'dietary';
+    public function users()
+    {
+        return $this->belongsToMany(User::class);
+    }
 }

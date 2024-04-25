@@ -10,6 +10,12 @@ export default {
     ],
 
     theme: {
+        theme: {
+            screens: {
+                'xl': '1280px',
+                'xs': '380px',
+            }
+        },
         extend: {
             keyframes: {
                 typing: {
