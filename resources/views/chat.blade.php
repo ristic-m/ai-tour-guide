@@ -25,7 +25,7 @@
 
             <!-- Logo on the left -->
             <div class="flex">
-                <a href="{{ route('dashboard') }}">
+                <a href="{{ route('chat') }}">
                     <img src="./images/logo.png" alt="logo" class="w-[70px] sm:w-[100px] pt-2">
                 </a>
             </div>
