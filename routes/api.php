@@ -8,4 +8,4 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::post('send-message', [ChatController::class, 'sendMessage'])->name('chat.message');
+Route::post('send-message', [ChatController::class, 'chat'])->name('chat.message');

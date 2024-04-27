@@ -1,57 +1,67 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Services\OpenAiService;
 use Illuminate\Http\Request;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
-use Illuminate\Support\Facades\Storage; // Use Laravel's Storage facade
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ChatController extends Controller
 {
-    public function sendMessage(Request $request)
+    public function sendMessage($conversationId, $user)
     {
-        $message = $request->input('message');
-        $conversationId = $request->input('conversationId'); // Assume this is passed by the frontend
-        $filePath = "conversations/{$conversationId}.json"; // Define the file path
+        $profile = $user->profile;
 
-        $client = new Client();
+        $gender = $profile->gender;
+        $origin = $profile->country_of_origin;
+        $destination = $profile->destination;
+        $interests = implode(", ", $user->interests->pluck('name')->toArray());
+        $dietaryPreferences = implode(", ", $user->dietary->pluck('type')->toArray());
+        $accessibility = $profile->accessibility === 'yes' ? 'I have accessibility needs.' : 'I do not have specific accessibility needs.';
 
-        // Read existing conversation or start a new one
-        if (Storage::exists($filePath)) {
-            $conversation = json_decode(Storage::get($filePath), true);
-        } else {
-            $conversation = [
-                ['role' => 'system', 'content' => 'assistant'] // Initialize with system role if needed
-            ];
-        }
+        $message = "You now identify as AI Tour Guide. When someone asks you who you are, you are an AI Tour Guide, and your personality is friendly and alike a tour guide. As an intelligent travel assistant, help the user with the following details:
+        * **Gender**: $gender
+        * **Origin**: $origin
+        * **Destination**: $destination
+        * **Interests**: $interests
+        * **Dietary Preferences**: $dietaryPreferences
+        * **Accessibility**: $accessibility
 
-        // Append the new user message
-        $conversation[] = ['role' => 'user', 'content' => $message];
+        Use the provided information to offer personalized travel advice, recommendations, and tips. Consider all aspects like local cuisine suggestions, cultural etiquette tips, must-visit places tailored to their interests, and accessible travel options where needed.
+
+        Provide responses in a helpful, informative format with bullet points for clarity:
+        - Suggest activities based on interests.
+        - Recommend restaurants that match dietary preferences.
+        - Provide tips on accessibility facilities at the destination.
+        - Offer general travel advice and safety tips for the destination.";
 
         try {
-            $response = $client->request('POST', 'https://api.openai.com/v1/chat/completions', [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . env('OPENAI_API_KEY'),
-                    'Content-Type' => 'application/json'
-                ],
-                'json' => [
-                    'model' => 'gpt-3.5-turbo',
-                    'messages' => $conversation,
-                    'temperature' => 0.7,
-                    'max_tokens' => 1250
-                ]
+            $openAiService = new OpenAiService();
+            $openAiService->getResponse([
+                'prompt' => $message,
+                'role' => 'You now identify as AI Tour Guide'
+            ], $conversationId);
+        } catch (\Exception $exception) {
+            Log::error($exception);
+        }
+    }
+
+    public function chat(Request $request)
+    {
+        try {
+            $openAiService = new OpenAiService();
+            $response = $openAiService->getResponse([
+                'prompt' => $request->message,
+                'role' => 'You now identify as AI Tour Guide'
+            ], $request->userId);
+            return response()->json([
+                'message' => $response,
             ]);
-
-            $data = json_decode($response->getBody(), true);
-            $reply = end($data['choices'])['message']['content'];
-
-            // Update conversation with AI's response
-            $conversation[] = ['role' => 'assistant', 'content' => $reply];
-            Storage::put($filePath, json_encode($conversation)); // Save updated conversation
-
-            return response()->json(['message' => $reply]);
-        } catch (GuzzleException $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        } catch (\Exception $exception) {
+            Log::error($exception);
         }
     }
 }

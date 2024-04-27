@@ -107,6 +107,7 @@
     <div class="px-4 py-4 sm:px-28 py-8">
         <form id="chatForm" class="flex items-center">
             <input type="text" id="messageInput" placeholder="Message AI Tour Guide" class="flex-1 w-full rounded-lg p-2 font-reddit">
+            <input type="hidden" name="userId" id="userId" value="{{ auth()->user()->id }}">
             <button type="submit" class="ml-2 px-4 sm:px-12 py-3 bg-violet-500 text-white rounded-full font-bold transition duration-200 hover:bg-violet-600 focus:outline-none font-reddit">
                 Send
             </button>
@@ -125,6 +126,7 @@
         const form = document.getElementById('chatForm');
         const messageInput = document.getElementById('messageInput');
         const messagesContainer = document.getElementById('messages');
+        const userId = document.getElementById('userId').value;
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -132,7 +134,7 @@
             if (message) {
                 displayMessage(message, 'right');
                 messageInput.value = '';
-                sendMessageToAPI(message);
+                sendMessageToAPI(message, userId);
             }
         });
 
@@ -143,9 +145,10 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        function sendMessageToAPI(message) {
+        function sendMessageToAPI(message, userId) {
             axios.post('/api/send-message', {
                 message: message,
+                userId: userId,
             }, {
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'), // CSRF token
